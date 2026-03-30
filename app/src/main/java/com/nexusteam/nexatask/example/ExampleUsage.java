@@ -5,7 +5,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.nexusteam.nexatask.core.NexaTask;
+import com.nexusteam.nexatask.NexaTask;
 import com.nexusteam.nexatask.manager.TaskManager;
 import com.nexusteam.nexatask.utils.TaskLogger;
 

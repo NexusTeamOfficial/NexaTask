@@ -36,14 +36,14 @@ import java.util.concurrent.atomic.AtomicReference;
  * @param <Result> Result type
  * 
  * @author NexaTask Team
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0
  */
 public abstract class NexaTask<Params, Progress, Result> {
     
     // ======================== VERSION INFO ========================
     
-    public static final String VERSION_NAME = "1.0.0";
+    public static final String VERSION_NAME = "1.1.0";
     public static final int VERSION_CODE = 1;
     public static final String LIBRARY_NAME = "NexaTask";
     
