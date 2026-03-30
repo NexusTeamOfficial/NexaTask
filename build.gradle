@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.github.NexusTeamOfficial'
-version = '1.0.8'
+version = '1.0.9'
 
 android {
     namespace 'com.nexusteam.nexatask'
@@ -58,7 +58,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.NexusTeamOfficial'
                 artifactId = 'NexaTask'
-                version = '1.0.8'
+                version = '1.0.9'
             }
         }
     }
@@ -91,7 +91,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.NexusTeamOfficial'
                 artifactId = 'NexaTask'
-                version = '1.0.8'
+                version = '1.0.9'
             }
         }
     }
