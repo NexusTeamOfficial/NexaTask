@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.library'
+    id 'com.android.library' version '8.2.2'
     id 'maven-publish'
 }
 
@@ -7,13 +7,12 @@ group = 'com.github.NexusTeamOfficial'
 version = '1.0.8'
 
 android {
-    compileSdk 34
     namespace 'com.nexusteam.nexatask'
+    compileSdk 34
 
     defaultConfig {
         minSdk 21
         targetSdk 34
-        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
@@ -35,6 +34,35 @@ android {
             withSourcesJar()
             withJavadocJar()
         }
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation:1.7.1'
+    implementation 'androidx.fragment:fragment:1.6.2'
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.NexusTeamOfficial'
+                artifactId = 'NexaTask'
+                version = '1.0.8'
+            }
+        }
+    }
+}        }
     }
     
     lint {
