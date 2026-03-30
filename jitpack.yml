@@ -1,0 +1,4 @@
+jdk:
+  - oraclejdk17
+install:
+  - ./gradlew publishToMavenLocal
