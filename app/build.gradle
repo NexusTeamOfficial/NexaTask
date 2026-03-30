@@ -11,7 +11,7 @@ android {
         minSdk 21
         targetSdk 34
         versionCode 1
-        versionName "1.1.1"
+        versionName "1.1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,8 +48,8 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.release
                 groupId = 'com.github.NexusTeamOfficial'
-                artifactId = 'nexatask'
-                version = '1.1.1'
+                artifactId = 'NexaTask'
+                version = '1.1.2'
             }
         }
     }
