@@ -1,12 +1,14 @@
 plugins {
     id 'com.android.library'
+    id 'maven-publish'  // ← YEH ADD KARO
 }
 
 group = 'com.github.NexusTeamOfficial'
-version = '1.0.2'
+version = '1.0.4'
 
 android {
     compileSdkVersion 33
+    namespace 'com.nexusteam.nexatask'  // ← APNA PACKAGE NAME DAALO
 
     defaultConfig {
         minSdkVersion 21
@@ -16,6 +18,12 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
     }
 }
 
@@ -27,4 +35,18 @@ repositories {
 dependencies {
     implementation 'androidx.annotation:annotation:1.7.1'
     implementation 'androidx.fragment:fragment:1.6.2'
+}
+
+// JitPack ke liye publish config
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.NexusTeamOfficial'
+                artifactId = 'NexaTask'
+                version = '1.0.4'
+            }
+        }
+    }
 }
