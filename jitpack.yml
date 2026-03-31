@@ -1,0 +1,5 @@
+jdk:
+  - openjdk11
+before_install:
+  - sdk install gradle 7.0.2
+  - sdk use gradle 7.0.2
