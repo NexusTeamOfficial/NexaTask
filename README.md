@@ -1,20 +1,22 @@
 # NexaTask
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](#)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](#)
 [![JitPack](https://jitpack.io/v/NexusTeamOfficial/NexaTask.svg)](https://jitpack.io/#NexusTeamOfficial/NexaTask)
 
-Powerful **AsyncTask alternative** for Android with lambda API and safe UI delivery in split-screen / multi-window.
+Modern **AsyncTask alternative** for Android — lambda API, lifecycle-safe UI, split-screen safe.
 
-## What’s new in 1.1.0
+## Package structure
 
-| Fix / feature | Detail |
-|---------------|--------|
-| **Split-screen crash** | UI callbacks skipped when host Activity is destroyed/finishing |
-| **Background safe** | Tasks are **not** cancelled on pause/stop — only on **destroy** |
-| **PriorityBlockingQueue crash** | Replaced with `LinkedBlockingQueue` |
-| **Lambda API** | `doInBackground` / `onPostExecute` / … as lambdas |
-| **Throwable** | Worker catches `Throwable`, not only `Exception` |
-| **UI exceptions swallowed** | Callback crashes never kill the process |
+```text
+com.nexusteam.nexatask/
+├── NexaTask.java          # public entry + builders
+├── api/                   # TaskListener, ProgressListener
+├── core/                  # TaskExecutors, UiDispatcher, HostChecker
+├── model/                 # TaskStatus, TaskPriority
+├── util/                  # TaskLogger
+├── manager/               # TaskManager (lifecycle)
+└── lambda/                # BackgroundWork, callbacks
+```
 
 ## Install (JitPack)
 
@@ -23,86 +25,69 @@ Powerful **AsyncTask alternative** for Android with lambda API and safe UI deliv
 maven { url 'https://jitpack.io' }
 
 // app/build.gradle
-implementation 'com.github.NexusTeamOfficial:NexaTask:1.1.0'
+implementation 'com.github.NexusTeamOfficial:NexaTask:1.1.1'
 ```
 
-> Tag `1.1.0` on latest main, then wait for JitPack green build.
+Create GitHub release tag **`1.1.1`** on `main`, then open [JitPack](https://jitpack.io/#NexusTeamOfficial/NexaTask).
 
-## Classic (AsyncTask-style)
-
-```java
-new NexaTask<Void, Integer, String>(this) {
-    @Override
-    protected String doInBackground(Void... params) throws Exception {
-        // background work
-        publishProgress(50);
-        return "ok";
-    }
-
-    @Override
-    protected void onPostExecute(String result) {
-        // UI — only runs if Activity still alive
-    }
-
-    @Override
-    protected void onProgressUpdate(Integer... values) { }
-
-    @Override
-    protected void onError(Throwable error) { }
-}.setTimeout(30, TimeUnit.SECONDS)
- .setMaxRetries(2)
- .execute();
-```
-
-## Lambda API (same method names)
+## Lambda API
 
 ```java
 NexaTask.<Void, Integer, String>lambda(this)
     .doInBackground(() -> {
-        // background
-        return "result";
+        return "ok";
     })
-    .onPreExecute(() -> { /* UI */ })
-    .onPostExecute(result -> { /* UI */ })
+    .onPreExecute(() -> { })
+    .onPostExecute(result -> { })
     .onProgressUpdate(values -> { })
     .onError(e -> { })
     .onCancelled(() -> { })
     .setTimeout(15, TimeUnit.SECONDS)
+    .setPriority(TaskPriority.HIGH)
     .execute();
 ```
 
-### Short form
-
 ```java
-NexaTask.run(this, () -> loadFromNetwork())
+NexaTask.run(this, () -> loadData())
     .onSuccess(data -> updateUi(data))
     .onError(e -> showError(e))
     .execute();
 ```
 
-## Init (optional, recommended)
+## Classic subclass
+
+```java
+new NexaTask<Void, Integer, String>(this) {
+    @Override
+    protected String doInBackground(Void... params) throws Exception {
+        publishProgress(50);
+        return "done";
+    }
+    @Override
+    protected void onPostExecute(String result) { }
+}.execute();
+```
+
+## Init (recommended)
 
 ```java
 public class App extends Application {
     @Override public void onCreate() {
         super.onCreate();
-        TaskManager.getInstance().init(this); // cancel tasks only when Activity destroyed
+        TaskManager.getInstance().init(this);
     }
 }
 ```
 
-## Crash you reported
+## Split-screen safety
 
-When the app was in **split-screen / background** and a task finished, `onPostExecute` could touch views on a dead Activity → crash.
+Pass `this` as host. When host is finishing/destroyed, UI callbacks are **skipped** — no crash. Tasks cancel only on **Activity.destroy**, never on pause/stop.
 
-**Fix:** pass `this` (Activity) as tag / host. Library checks `isFinishing()` / `isDestroyed()` and **skips UI** instead of crashing. Work still runs in background; only UI is gated.
+## Logging
 
 ```java
-// Always bind host when updating UI:
-NexaTask.lambda(this)
-    .doInBackground(() -> work())
-    .onPostExecute(r -> textView.setText(r))  // safe
-    .execute();
+TaskLogger.setDebugEnabled(true);
+TaskLogger.setMinLogLevel(TaskLogger.LogLevel.DEBUG);
 ```
 
 ## License
