@@ -1,6 +1,6 @@
 # NexaTask
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](#)
+[![Version](https://img.shields.io/badge/version-1.1.3-blue.svg)](#)
 [![JitPack](https://jitpack.io/v/NexusTeamOfficial/NexaTask.svg)](https://jitpack.io/#NexusTeamOfficial/NexaTask)
 
 Modern **AsyncTask alternative** for Android — lambda API, lifecycle-safe UI, split-screen safe.
@@ -25,10 +25,15 @@ com.nexusteam.nexatask/
 maven { url 'https://jitpack.io' }
 
 // app/build.gradle
-implementation 'com.github.NexusTeamOfficial:NexaTask:1.1.1'
+implementation 'com.github.NexusTeamOfficial:NexaTask:1.1.3'
 ```
 
-Create GitHub release tag **`1.1.1`** on `main`, then open [JitPack](https://jitpack.io/#NexusTeamOfficial/NexaTask).
+**Important:** Create a **new** GitHub release tag `1.1.3` (or `v1.1.3`) from the latest **main** branch — do not reuse old `v1.1.1` / `v1.1.2` tags (they pointed at wrong commits).
+
+1. Open: https://github.com/NexusTeamOfficial/NexaTask/releases/new  
+2. Tag: `1.1.3` → target **main**  
+3. Publish  
+4. Wait for green build: https://jitpack.io/#NexusTeamOfficial/NexaTask  
 
 ## Lambda API
 
