@@ -1,51 +1,110 @@
 # NexaTask
 
-A powerful, feature-rich background task library for Android.
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](#)
+[![JitPack](https://jitpack.io/v/NexusTeamOfficial/NexaTask.svg)](https://jitpack.io/#NexusTeamOfficial/NexaTask)
 
-## Features
+Powerful **AsyncTask alternative** for Android with lambda API and safe UI delivery in split-screen / multi-window.
 
-*   **AsyncTask Alternative**: Drop-in replacement for AsyncTask.
-*   **Retry Mechanism**: Automatic retry with exponential backoff.
-*   **Timeout Support**: Set execution timeouts for tasks.
-*   **Lifecycle Awareness**: Automatically cancels tasks when activities/fragments are destroyed.
-*   **Priority-based Execution**: High, Normal, and Low priority thread pools.
+## What’s new in 1.1.0
 
-## Installation (JitPack)
+| Fix / feature | Detail |
+|---------------|--------|
+| **Split-screen crash** | UI callbacks skipped when host Activity is destroyed/finishing |
+| **Background safe** | Tasks are **not** cancelled on pause/stop — only on **destroy** |
+| **PriorityBlockingQueue crash** | Replaced with `LinkedBlockingQueue` |
+| **Lambda API** | `doInBackground` / `onPostExecute` / … as lambdas |
+| **Throwable** | Worker catches `Throwable`, not only `Exception` |
+| **UI exceptions swallowed** | Callback crashes never kill the process |
 
-1.  **Add JitPack repository to your root `settings.gradle`**:
+## Install (JitPack)
 
-    ```gradle
-    dependencyResolutionManagement {
-        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-        repositories {
-            google()
-            mavenCentral()
-            maven { url 'https://jitpack.io' }
-        }
-    }
-    ```
+```gradle
+// settings.gradle
+maven { url 'https://jitpack.io' }
 
-2.  **Add the dependency to your app module's `build.gradle`**:
+// app/build.gradle
+implementation 'com.github.NexusTeamOfficial:NexaTask:1.1.0'
+```
 
-    ```gradle
-    dependencies {
-        implementation 'com.github.NexusTeamOfficial:NexaTask:1.0.0'
-    }
-    ```
+> Tag `1.1.0` on latest main, then wait for JitPack green build.
 
-## Usage
+## Classic (AsyncTask-style)
 
 ```java
-new NexaTask<String, Integer, String>(this) {
+new NexaTask<Void, Integer, String>(this) {
     @Override
-    protected String doInBackground(String... params) throws Exception {
-        // Background work
-        return "Result";
+    protected String doInBackground(Void... params) throws Exception {
+        // background work
+        publishProgress(50);
+        return "ok";
     }
 
     @Override
     protected void onPostExecute(String result) {
-        // UI thread
+        // UI — only runs if Activity still alive
     }
-}.execute("Param");
+
+    @Override
+    protected void onProgressUpdate(Integer... values) { }
+
+    @Override
+    protected void onError(Throwable error) { }
+}.setTimeout(30, TimeUnit.SECONDS)
+ .setMaxRetries(2)
+ .execute();
 ```
+
+## Lambda API (same method names)
+
+```java
+NexaTask.<Void, Integer, String>lambda(this)
+    .doInBackground(() -> {
+        // background
+        return "result";
+    })
+    .onPreExecute(() -> { /* UI */ })
+    .onPostExecute(result -> { /* UI */ })
+    .onProgressUpdate(values -> { })
+    .onError(e -> { })
+    .onCancelled(() -> { })
+    .setTimeout(15, TimeUnit.SECONDS)
+    .execute();
+```
+
+### Short form
+
+```java
+NexaTask.run(this, () -> loadFromNetwork())
+    .onSuccess(data -> updateUi(data))
+    .onError(e -> showError(e))
+    .execute();
+```
+
+## Init (optional, recommended)
+
+```java
+public class App extends Application {
+    @Override public void onCreate() {
+        super.onCreate();
+        TaskManager.getInstance().init(this); // cancel tasks only when Activity destroyed
+    }
+}
+```
+
+## Crash you reported
+
+When the app was in **split-screen / background** and a task finished, `onPostExecute` could touch views on a dead Activity → crash.
+
+**Fix:** pass `this` (Activity) as tag / host. Library checks `isFinishing()` / `isDestroyed()` and **skips UI** instead of crashing. Work still runs in background; only UI is gated.
+
+```java
+// Always bind host when updating UI:
+NexaTask.lambda(this)
+    .doInBackground(() -> work())
+    .onPostExecute(r -> textView.setText(r))  // safe
+    .execute();
+```
+
+## License
+
+MIT
