@@ -2,7 +2,6 @@ package com.nexusteam.nexatask.manager;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,25 +11,32 @@ import androidx.fragment.app.FragmentActivity;
 import com.nexusteam.nexatask.NexaTask;
 
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TaskManager - Manages task lifecycle and prevents memory leaks
- * 
- * Automatically cancels tasks when activities/fragments are destroyed
+ * TaskManager — lifecycle-aware task registry.
+ *
+ * <p>Cancels tasks only when the host Activity is <b>destroyed</b>
+ * (not on pause/stop), so split-screen / multi-window background does not
+ * kill running work. UI callbacks are still skipped safely by NexaTask
+ * when the host is not alive.
  */
 public class TaskManager {
-    
+
     private static volatile TaskManager sInstance;
     private final Map<String, NexaTask<?, ?, ?>> mActiveTasks = new ConcurrentHashMap<>();
     private final Map<Object, List<String>> mTagToTaskIds = new ConcurrentHashMap<>();
     private final Map<String, WeakReference<LifecycleCallback>> mCallbacks = new ConcurrentHashMap<>();
     private final Map<String, Object> mTaskTags = new ConcurrentHashMap<>();
-    
+    private boolean mLifecycleRegistered;
+
     private TaskManager() {
     }
-    
+
     public static TaskManager getInstance() {
         if (sInstance == null) {
             synchronized (TaskManager.class) {
@@ -41,51 +47,61 @@ public class TaskManager {
         }
         return sInstance;
     }
-    
+
     /**
-     * Initialize with application (for automatic lifecycle management)
+     * Register Activity lifecycle so destroyed activities cancel their tasks.
+     * Call once from Application.onCreate().
      */
-    public void init(@NonNull Application application) {
+    public synchronized void init(@NonNull Application application) {
+        if (mLifecycleRegistered) {
+            return;
+        }
+        mLifecycleRegistered = true;
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
-            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
-            
+            public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            }
+
             @Override
-            public void onActivityStarted(Activity activity) {}
-            
+            public void onActivityStarted(@NonNull Activity activity) {
+            }
+
             @Override
-            public void onActivityResumed(Activity activity) {}
-            
+            public void onActivityResumed(@NonNull Activity activity) {
+            }
+
             @Override
-            public void onActivityPaused(Activity activity) {}
-            
+            public void onActivityPaused(@NonNull Activity activity) {
+                // Do NOT cancel here — split-screen / multi-window pauses activities.
+            }
+
             @Override
-            public void onActivityStopped(Activity activity) {}
-            
+            public void onActivityStopped(@NonNull Activity activity) {
+                // Do NOT cancel — background is normal.
+            }
+
             @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
-            
+            public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+            }
+
             @Override
-            public void onActivityDestroyed(Activity activity) {
+            public void onActivityDestroyed(@NonNull Activity activity) {
                 cancelTasksWithTag(activity);
             }
         });
     }
-    
-    /**
-     * Register a task with lifecycle callback
-     */
+
     public <Params, Progress, Result> NexaTask<Params, Progress, Result> registerTask(
             @NonNull NexaTask<Params, Progress, Result> task,
             @Nullable LifecycleCallback callback) {
-        
+
         String taskId = task.getTaskId();
         mActiveTasks.put(taskId, task);
-        
+
         if (callback != null) {
             mCallbacks.put(taskId, new WeakReference<>(callback));
         }
-        
+
         Object tag = task.getTag();
         if (tag != null) {
             mTaskTags.put(taskId, tag);
@@ -94,15 +110,13 @@ public class TaskManager {
                 taskIds = Collections.synchronizedList(new ArrayList<String>());
                 mTagToTaskIds.put(tag, taskIds);
             }
-            taskIds.add(taskId);
+            if (!taskIds.contains(taskId)) {
+                taskIds.add(taskId);
+            }
         }
-        
         return task;
     }
-    
-    /**
-     * Unregister a task
-     */
+
     public void unregisterTask(@NonNull String taskId) {
         NexaTask<?, ?, ?> task = mActiveTasks.remove(taskId);
         if (task != null) {
@@ -119,10 +133,7 @@ public class TaskManager {
         }
         mCallbacks.remove(taskId);
     }
-    
-    /**
-     * Cancel all tasks for a specific tag (activity/fragment)
-     */
+
     public void cancelTasksWithTag(@NonNull Object tag) {
         List<String> taskIds = mTagToTaskIds.get(tag);
         if (taskIds != null) {
@@ -133,59 +144,79 @@ public class TaskManager {
             }
         }
     }
-    
-    /**
-     * Cancel a specific task
-     */
+
     public boolean cancelTask(@NonNull String taskId) {
         NexaTask<?, ?, ?> task = mActiveTasks.get(taskId);
         if (task != null && !task.isCancelled()) {
             boolean cancelled = task.cancel(true);
-            if (cancelled) {
-                unregisterTask(taskId);
-            }
+            unregisterTask(taskId);
             return cancelled;
         }
         return false;
     }
-    
-    /**
-     * Cancel all active tasks
-     */
+
     public void cancelAllTasks() {
         for (String taskId : new ArrayList<>(mActiveTasks.keySet())) {
             cancelTask(taskId);
         }
     }
-    
-    /**
-     * Get active task count
-     */
+
     public int getActiveTaskCount() {
         return mActiveTasks.size();
     }
-    
-    /**
-     * Get task by ID
-     */
+
     @Nullable
     public NexaTask<?, ?, ?> getTask(@NonNull String taskId) {
         return mActiveTasks.get(taskId);
     }
-    
-    /**
-     * Check if object is a lifecycle owner (Activity/Fragment)
-     */
+
     public static boolean isLifecycleOwner(@NonNull Object obj) {
-        return obj instanceof Activity || obj instanceof Fragment || obj instanceof FragmentActivity;
+        return obj instanceof Activity
+                || obj instanceof Fragment
+                || obj instanceof FragmentActivity;
     }
-    
+
     /**
-     * Lifecycle callback interface
+     * Whether a host is still safe for UI updates.
      */
+    public static boolean isHostAlive(@Nullable Object tag) {
+        if (tag == null) {
+            return true;
+        }
+        if (tag instanceof Activity) {
+            Activity a = (Activity) tag;
+            if (a.isFinishing()) {
+                return false;
+            }
+            try {
+                return !a.isDestroyed();
+            } catch (Throwable t) {
+                return true;
+            }
+        }
+        if (tag instanceof Fragment) {
+            Fragment f = (Fragment) tag;
+            if (!f.isAdded() || f.isDetached() || f.isRemoving()) {
+                return false;
+            }
+            Activity a = f.getActivity();
+            if (a == null || a.isFinishing()) {
+                return false;
+            }
+            try {
+                return !a.isDestroyed();
+            } catch (Throwable t) {
+                return true;
+            }
+        }
+        return true;
+    }
+
     public interface LifecycleCallback {
         void onDestroy();
+
         void onPause();
+
         void onResume();
     }
 }
