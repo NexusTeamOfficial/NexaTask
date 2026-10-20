@@ -3,3 +3,7 @@ jdk:
 before_install:
   - git config --global --add safe.directory /build
   - git config --global --add safe.directory '*'
+install:
+  - curl -sL https://services.gradle.org/distributions/gradle-7.5-bin.zip -o /tmp/gradle-7.5-bin.zip
+  - unzip -q /tmp/gradle-7.5-bin.zip -d /tmp
+  - /tmp/gradle-7.5/bin/gradle :nexatask:assembleRelease :nexatask:publishToMavenLocal -x test --stacktrace

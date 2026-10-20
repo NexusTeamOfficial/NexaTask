@@ -1,17 +1,4 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://jitpack.io' }
-    }
+// Top-level build file for NexaTask (JitPack-compatible)
+plugins {
+    id 'com.android.library' version '7.4.2' apply false
 }
