@@ -3,9 +3,9 @@
 ### Modern AsyncTask replacement for Android — pure Java, lambda-first, crash-safe
 
 [![JitPack](https://jitpack.io/v/NexusTeamOfficial/NexaTask.svg)](https://jitpack.io/#NexusTeamOfficial/NexaTask)
-[![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg)](https://android-arsenal.com/api?level=21)
+![minSdk](https://img.shields.io/badge/minSdk-21-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
 [![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://www.java.com)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84.svg)](https://developer.android.com)
 
 > **Drop-in AsyncTask alternative** with Java 8 lambdas, lifecycle-aware UI callbacks, split-screen safety, priorities, timeouts, and zero Kotlin dependency.
@@ -16,6 +16,8 @@ NexaTask.run(this, () -> api.fetchUser())
     .onError(e -> showError(e))
     .execute();
 ```
+
+![NexaTask demo](docs/demo.gif)
 
 ---
 
@@ -30,6 +32,8 @@ NexaTask.run(this, () -> api.fetchUser())
 | Kotlin-only modern APIs | **100% Java** — works in Java & Kotlin apps |
 
 Built for production apps that still want a simple background → UI flow without RxJava, Coroutines, or WorkManager overhead.
+
+See the [sample app](samples/demo-app/) for a runnable demo (button → spinner → result, safe across rotation).
 
 ---
 
@@ -72,9 +76,6 @@ dependencies {
     implementation 'com.github.NexusTeamOfficial:NexaTask:v1.1.3'
 }
 ```
-
-> Prefer tag **`v1.1.3`**. If a version is still building, use the short commit:  
-> `implementation 'com.github.NexusTeamOfficial:NexaTask:b9a3205538'`
 
 Sync Gradle — done.
 
@@ -174,7 +175,7 @@ public class App extends Application {
 
 ## Lifecycle & split-screen safety
 
-Always pass a **host** (`Activity`, `Fragment`, or `LifecycleOwner`-style object supported by the library):
+Always pass a **host** (`Activity`, `Fragment`, or host object supported by the library):
 
 ```java
 NexaTask.run(this, () -> heavyWork()).onSuccess(this::updateUi).execute();
@@ -246,6 +247,7 @@ com.nexusteam.nexatask/
 | Language | **Java 8+** (no Kotlin required) |
 | Min SDK | **21** |
 | Compile SDK | 33+ recommended |
+| Version | **v1.1.3** |
 | Distribution | JitPack AAR |
 
 ---
@@ -258,10 +260,18 @@ com.nexusteam.nexatask/
 
 ---
 
+## Sample app
+
+Minimal demo that runs a background task, shows a spinner, handles success/error, and survives rotation / split-screen:
+
+→ [samples/demo-app/](samples/demo-app/)
+
+---
+
 ## Links
 
-- **JitPack builds:** [jitpack.io/#NexusTeamOfficial/NexaTask](https://jitpack.io/#NexusTeamOfficial/NexaTask)
-- **Releases / tags:** [github.com/NexusTeamOfficial/NexaTask/releases](https://github.com/NexusTeamOfficial/NexaTask/releases)
+- **JitPack:** [jitpack.io/#NexusTeamOfficial/NexaTask](https://jitpack.io/#NexusTeamOfficial/NexaTask)
+- **Releases:** [github.com/NexusTeamOfficial/NexaTask/releases](https://github.com/NexusTeamOfficial/NexaTask/releases)
 - **Issues:** [github.com/NexusTeamOfficial/NexaTask/issues](https://github.com/NexusTeamOfficial/NexaTask/issues)
 
 ---
